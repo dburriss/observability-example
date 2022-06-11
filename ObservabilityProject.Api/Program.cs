@@ -1,5 +1,9 @@
 using ObservabilityProject.Api.DataAccess;
 using ObservabilityProject.Api.Domains;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.Datadog.Logs;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +19,22 @@ builder.Services.AddTransient<MarkAsDone>();
 builder.Services.AddTransient<CreateTodoList>();
 builder.Services.AddTransient<CreateTodo>();
 
+// Log to Datadog
+builder.Host.UseSerilog((ctx, cfg) => {
+    cfg
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.Debug()
+    .WriteTo.DatadogLogs(
+        Environment.GetEnvironmentVariable("DD_API_KEY"),
+        service: Environment.GetEnvironmentVariable("DD_SERVICE"),
+        host: Dns.GetHostName() ?? "localhost",
+        configuration: new DatadogConfiguration(url: "tcp-intake.logs.datadoghq.eu", port: 443, useSSL: true, useTCP: true)
+    );
+});
 
 var app = builder.Build();
 
@@ -30,6 +50,13 @@ app.UseHttpsRedirection();
 //======================
 // ENDPOINTS
 //======================
+
+// Index
+app.MapGet("/", () =>
+{
+    return Results.Ok("Hello TODO");
+})
+.WithName("Index");
 
 // Create a new todo list
 app.MapPost("/todos/{todoListId}", (Guid todoListId, string name, CreateTodoList createTodoList) =>
@@ -66,8 +93,8 @@ app.MapPost("/todos/{todoListId}/done", (Guid todoListId, Guid todoId, MarkAsDon
 // List all todo lists
 app.MapGet("/todos", (ITodoListStore todos) =>
 {
-    var result = todos.GetLists();
-    return Results.Ok(result.Select(x => new { Id = x.Id, Name = x.Name }));
+        var result = todos.GetLists();
+        return Results.Ok(result.Select(x => new { Id = x.Id, Name = x.Name }));          
 })
 .WithName("GET TODO Lists");
 

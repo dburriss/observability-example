@@ -5,6 +5,12 @@ namespace ObservabilityProject.Api.DataAccess
     public class ToDoDataStore : ITodoListStore
     {
         static Dictionary<Guid, TodoList> dataStore = new Dictionary<Guid, TodoList>();
+        private readonly ILogger<ToDoDataStore> logger;
+
+        public ToDoDataStore(ILogger<ToDoDataStore> logger)
+        {
+            this.logger = logger;
+        }
 
         public (bool, TodoList) Get(Guid toDoListId)
         {
@@ -25,6 +31,7 @@ namespace ObservabilityProject.Api.DataAccess
         {
             if(dataStore.Count == 0)
             {
+                logger.LogInformation("TODO lists requested but none.");
                 return (new List<TodoList>());
             }
             return dataStore.Values.ToList();
