@@ -1,5 +1,6 @@
 ﻿using Datadog.Trace;
 using ObservabilityProject.Api.Domains;
+using StatsdClient;
 
 namespace ObservabilityProject.Api.DataAccess
 {
@@ -7,10 +8,12 @@ namespace ObservabilityProject.Api.DataAccess
     {
         static Dictionary<Guid, TodoList> dataStore = new Dictionary<Guid, TodoList>();
         private readonly ILogger<ToDoDataStore> logger;
+        private readonly Func<DogStatsdService> statsDFactory;
 
-        public ToDoDataStore(ILogger<ToDoDataStore> logger)
+        public ToDoDataStore(ILogger<ToDoDataStore> logger, Func<DogStatsdService> statsDFactory)
         {
             this.logger = logger;
+            this.statsDFactory = statsDFactory;
         }
 
         public (bool, TodoList) Get(Guid toDoListId)
@@ -33,6 +36,9 @@ namespace ObservabilityProject.Api.DataAccess
             using (var scope = Tracer.Instance.StartActive("query.todo_lists"))
             {
                 scope.Span.ResourceName = "ToDoDataStore";
+
+                DogStatsd.Set("observability_project.todo.list_count", dataStore.Count);
+
                 if (dataStore.Count == 0)
                 {
                     logger.LogInformation("TODO lists requested but none.");
