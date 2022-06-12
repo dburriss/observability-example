@@ -21,7 +21,12 @@ We will be piggy backing off the APM to send the logs.
 
 ## Tracing
 
+https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-framework/?tab=code
+https://docs.datadoghq.com/tracing/setup_overview/custom_instrumentation/dotnet/
+
 - [x] Env vars: DD_TRACE_ENABLED
+- [x] Nuget package Datadog.Trace
+- [x] Place a span
 
 ## Troubleshooting
 

@@ -108,3 +108,14 @@ app.MapGet("/todos/{todoListId}", (Guid todoListId, ITodoListStore todos) =>
 
 // RUN APP
 app.Run();
+
+
+internal static class ObservabilityProjectActivitySource
+{
+    private static readonly System.Reflection.AssemblyName AssemblyName = typeof(ObservabilityProjectActivitySource).Assembly.GetName();
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+    internal static readonly System.Diagnostics.ActivitySource ActivitySource = new(AssemblyName.Name, AssemblyName.Version.ToString());
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8604 // Possible null reference argument.
+}

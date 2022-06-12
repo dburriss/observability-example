@@ -1,4 +1,5 @@
-﻿using ObservabilityProject.Api.Domains;
+﻿using Datadog.Trace;
+using ObservabilityProject.Api.Domains;
 
 namespace ObservabilityProject.Api.DataAccess
 {
@@ -29,12 +30,16 @@ namespace ObservabilityProject.Api.DataAccess
 
         public IReadOnlyList<TodoList> GetLists()
         {
-            if(dataStore.Count == 0)
+            using (var scope = Tracer.Instance.StartActive("query.todo_lists"))
             {
-                logger.LogInformation("TODO lists requested but none.");
-                return (new List<TodoList>());
+                scope.Span.ResourceName = "ToDoDataStore";
+                if (dataStore.Count == 0)
+                {
+                    logger.LogInformation("TODO lists requested but none.");
+                    return (new List<TodoList>());
+                }
+                return dataStore.Values.ToList();
             }
-            return dataStore.Values.ToList();
         }
     }
 }
