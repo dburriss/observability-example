@@ -15,6 +15,7 @@ builder.Services.AddTransient<MarkInProgress>();
 builder.Services.AddTransient<MarkAsDone>();
 builder.Services.AddTransient<CreateTodoList>();
 builder.Services.AddTransient<CreateTodo>();
+builder.Services.AddTransient(typeof(TelemetryEvents<>));
 
 builder.AddTelemetry();
 

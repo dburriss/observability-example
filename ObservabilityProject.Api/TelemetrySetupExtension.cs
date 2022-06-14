@@ -6,14 +6,15 @@ using System.Linq;
 
 namespace ObservabilityProject.Api
 {
-    public static class TelemetryExtension
+    public static class TelemetrySetupExtension
     {
         public static WebApplicationBuilder AddTelemetry(this WebApplicationBuilder webApplicationBuilder)
         {
             CheckEnvVars();
 
             return webApplicationBuilder
-                .AddLogging();
+                .AddLogging()
+                .AddMetrics();
         }
 
         private static void CheckEnvVars()
@@ -25,7 +26,7 @@ namespace ObservabilityProject.Api
             missing.EnvVarCheck("DD_VERSION", "Set `DD_VERSION` with the version op this application");
             missing.EnvVarCheck("DD_SITE", "Set `DD_SITE` with the site to send to eg. datadoghq.eu");
             missing.EnvVarCheck("DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS", "Set `DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS` to `Serilog`");
-            missing.EnvVarCheck("DD_LOG_INJECTION", "Set `DD_LOG_INJECTION` to `true`");
+            missing.EnvVarCheck("DD_LOGS_INJECTION", "Set `DD_LOGS_INJECTION` to `true`");
             missing.EnvVarCheck("DD_TRACE_ENABLED", "Set `DD_TRACE_ENABLED` to `true`");
 
             if(missing.Count > 0)
@@ -75,8 +76,15 @@ namespace ObservabilityProject.Api
         {
             try
             {
+                var config = new StatsdConfig {
+                    ConstantTags = new string[] { 
+                        $"service:{Environment.GetEnvironmentVariable("DD_SERVICE")}",
+                        $"env:{Environment.GetEnvironmentVariable("DD_ENV")}",
+                        $"version:{Environment.GetEnvironmentVariable("DD_VERSION")}"
+                    } 
+                };
                 // Configure your DogStatsd client and configure any tags
-                DogStatsd.Configure(new StatsdConfig());
+                DogStatsd.Configure(config);
             }
             catch (Exception ex)
             {
