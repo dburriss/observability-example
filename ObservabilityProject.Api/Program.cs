@@ -1,10 +1,6 @@
-using ObservabilityProject.Api.DataAccess;
+using ObservabilityProject.Api;
 using ObservabilityProject.Api.Domains;
-using Serilog;
-using Serilog.Events;
-using Serilog.Sinks.Datadog.Logs;
-using StatsdClient;
-using System.Net;
+using ObservabilityProject.Api.DataAccess;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,50 +16,9 @@ builder.Services.AddTransient<MarkAsDone>();
 builder.Services.AddTransient<CreateTodoList>();
 builder.Services.AddTransient<CreateTodo>();
 
-//// DogStatsD
-
-//var dogstatsdConfig = new StatsdConfig
-//{
-//    //StatsdServerName = "127.0.0.1",
-//    //StatsdPort = 8125,
-//};
-
-
-//builder.Services.AddTransient<Func<DogStatsdService>>((_) => { return () => new DogStatsdService(); });
-
-// Log to Datadog
-builder.Host.UseSerilog((ctx, cfg) => {
-    cfg
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Information)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.Debug()
-    .WriteTo.DatadogLogs(
-        Environment.GetEnvironmentVariable("DD_API_KEY"),
-        service: Environment.GetEnvironmentVariable("DD_SERVICE"),
-        host: Environment.UserDomainName ?? "unknown",
-        configuration: new DatadogConfiguration(url: "tcp-intake.logs.datadoghq.eu", port: 443, useSSL: true, useTCP: true)
-    );
-});
+builder.AddTelemetry();
 
 var app = builder.Build();
-
-try
-{
-    // Configure your DogStatsd client and configure any tags
-    DogStatsd.Configure(new StatsdConfig());
-}
-catch (Exception ex)
-{
-    // An exception is thrown by the Configure call if the necessary environment variables are not present.
-    // These environment variables are present in Azure App Service, but
-    // need to be set in order to test your custom metrics: DD_API_KEY:{api_key}, DD_AGENT_HOST:localhost
-    // Ignore or log the exception as it suits you
-    Console.WriteLine(ex);
-    Log.Logger.Error(ex, "DD metrics failed");
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
